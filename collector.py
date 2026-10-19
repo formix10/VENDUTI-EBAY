@@ -58,7 +58,7 @@ def collect(category_id):
 
     try:
         response = requests.get(API_URL,
-            params={"categoryId": category_id, "ebaySite": os.getenv("SOLD_COMPS_SITE", "EBAY_IT"),
+            params={"categoryId": category_id, "ebaySite": os.getenv("SOLD_COMPS_SITE", "ebay.it"),
                     "page": 1, "count": 240, "sortOrder": "endedRecently", "minPrice": minimum},
             headers={"Authorization": f"Bearer {key}", "Accept": "application/json"},
             timeout=TIMEOUT)
@@ -84,18 +84,18 @@ def collect(category_id):
                     continue
                 ext_id = str(item.get("itemId") or item.get("item_id") or item.get("id") or "").strip() or None
                 url = str(item.get("url") or item.get("itemUrl") or "")
-                sold_at = str(item.get("soldDate") or item.get("endTime") or item.get("sold_at") or "")
+                sold_at = str(item.get("endedAt") or item.get("soldDate") or item.get("endTime") or item.get("sold_at") or "")
                 # Without an item ID, avoid duplicate imports by using stable listing attributes.
                 if not ext_id:
                     import hashlib
                     ext_id = hashlib.sha256((title+"|"+str(price)+"|"+sold_at+"|"+url).encode()).hexdigest()
-                image = item.get("imageUrl") or item.get("image") or ""
+                image = item.get("thumbnailUrl") or item.get("imageUrl") or item.get("image") or ""
                 if isinstance(image, dict):
                     image = image.get("url", "")
                 result = con.execute("""INSERT OR IGNORE INTO sales
                   (category_id, external_id, title, price, currency, sold_at, url, image_url, captured_at)
                   VALUES (?,?,?,?,?,?,?,?,?)""",
-                  (category_id, ext_id, title, price, str(item.get("currency") or "EUR"),
+                  (category_id, ext_id, title, price, str(item.get("soldCurrency") or item.get("currency") or "EUR"),
                    sold_at, url, str(image), utcnow()))
                 added += result.rowcount
             con.execute("UPDATE api_calls SET status='success' WHERE id=?", (call_id,))
