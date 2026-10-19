@@ -1,0 +1,21 @@
+[Unit]
+Description=Eolian Retro Venduti eBay Streamlit
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=venduti
+Group=venduti
+WorkingDirectory=/opt/venduti-ebay
+ExecStart=/opt/venduti-ebay/.venv/bin/streamlit run dashboard.py --server.address=127.0.0.1 --server.port=8501 --server.headless=true
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
