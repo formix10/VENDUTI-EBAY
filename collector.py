@@ -85,7 +85,7 @@ def collect(category_id):
                 if not isinstance(item, dict):
                     continue
                 title = str(item.get("title") or item.get("name") or "").strip()
-                price = number(item.get("price", item.get("soldPrice")))
+                price = number(item.get("soldPrice") if item.get("soldPrice") is not None else item.get("price"))
                 if not title or price is None or price < minimum:
                     continue
                 ext_id = str(item.get("itemId") or item.get("item_id") or item.get("id") or "").strip() or None
