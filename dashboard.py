@@ -115,12 +115,17 @@ with tab2:
             families = filtered.groupby("famiglia").agg(venduti=("id","count"), prezzo_medio=("price","mean"))
             st.dataframe(families.sort_values("venduti", ascending=False).head(50), use_container_width=True)
             st.subheader("Distribuzione dei prezzi")
-            st.bar_chart(filtered.groupby(pd.cut(filtered["price"], bins=10, duplicates="drop"), observed=True).size().rename("Venduti"))
+            price_ranges = pd.cut(filtered["price"], bins=10, duplicates="drop")
+            distribution = filtered.groupby(price_ranges, observed=True).size()
+            distribution.index = distribution.index.astype(str)
+            st.bar_chart(distribution.rename("Venduti"))
             st.subheader("Elenco venduti")
             st.dataframe(filtered[["title","famiglia","price","currency","sold_at","category_name","url"]],
                          use_container_width=True, hide_index=True)
             st.download_button("Esporta CSV", filtered.to_csv(index=False).encode("utf-8-sig"),
                                file_name="venduti_ebay.csv", mime="text/csv")
+        else:
+            st.info("Nessun venduto corrisponde ai filtri selezionati.")
 
 with tab3:
     st.write("Chiave API configurata:", "Sì" if os.getenv("SOLDCOMPS_API_KEY") else "No")
