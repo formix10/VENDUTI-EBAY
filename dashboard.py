@@ -9,6 +9,7 @@ load_dotenv()
 from storage import connect, monthly_calls
 from collector import collect
 from classifier import classify
+from suggestions import SUGGESTIONS
 st.set_page_config(page_title="Eolian Retrò · Venduti eBay", layout="wide", page_icon="🎮")
 st.title("🎮 Eolian Retrò — Venduti eBay")
 st.caption("Database indipendente · categorie e prezzi minimi personalizzati · SoldComps piano gratuito")
@@ -28,7 +29,7 @@ c.metric("Richieste API questo mese", f"{used}/{cap}")
 st.progress(min(used/cap, 1.0))
 st.caption("Il contatore locale include tentativi ed errori e non sostituisce il saldo ufficiale SoldComps.")
 
-tab1,tab2,tab3 = st.tabs(["Categorie e raccolta", "Venduti e statistiche", "Impostazioni"])
+tab1,tab2,tab3,tab4 = st.tabs(["Categorie e raccolta", "Venduti e statistiche", "Idee da monitorare", "Impostazioni"])
 
 with tab1:
     st.subheader("Aggiungi una categoria eBay")
@@ -128,6 +129,16 @@ with tab2:
             st.info("Nessun venduto corrisponde ai filtri selezionati.")
 
 with tab3:
+    st.subheader("Catalogo di categorie suggerite")
+    st.caption("30 idee per Eolian Retrò: nessuna viene importata automaticamente. Gli ID mancanti devono essere verificati su eBay.")
+    suggestions = pd.DataFrame(SUGGESTIONS, columns=["Settore", "Categoria", "ID eBay", "Minimo suggerito (€)", "Priorità", "Esempi"])
+    sectors = st.multiselect("Settori", sorted(suggestions["Settore"].unique()), default=sorted(suggestions["Settore"].unique()))
+    suggestions = suggestions[suggestions["Settore"].isin(sectors)]
+    st.dataframe(suggestions, use_container_width=True, hide_index=True)
+    st.download_button("Scarica catalogo CSV", suggestions.to_csv(index=False).encode("utf-8-sig"), file_name="idee_categorie_eolianretro.csv", mime="text/csv")
+    st.info("Per attivare una categoria, copia il suo ID verificato nella scheda 'Categorie e raccolta'. Non vengono eseguite richieste API da questa schermata.")
+
+with tab4:
     st.write("Chiave API configurata:", "Sì" if os.getenv("SOLDCOMPS_API_KEY") else "No")
     st.write("Database:", str(os.getenv("DB_PATH", "data/venduti.sqlite3")))
     st.write("Limite locale richieste mensili:", cap)
