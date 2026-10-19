@@ -85,9 +85,23 @@ with tab2:
     if sales.empty:
         st.info("Ancora nessun venduto raccolto.")
     else:
+        sales["famiglia"] = sales["title"].fillna("").apply(classify)
         categories = sorted(sales["category_name"].dropna().unique().tolist())
         selected = st.multiselect("Filtra categorie", categories, default=categories)
         filtered = sales[sales["category_name"].isin(selected)].copy()
+        search = st.text_input("Cerca nei titoli", placeholder="Es. Pokémon Oro, Nintendo DS...")
+        families_available = sorted(filtered["famiglia"].unique().tolist())
+        chosen_families = st.multiselect("Filtra famiglia console", families_available, default=families_available)
+        filtered = filtered[filtered["famiglia"].isin(chosen_families)].copy()
+        if search.strip():
+            filtered = filtered[filtered["title"].fillna("").str.contains(search.strip(), case=False, regex=False)]
+        p1, p2 = st.columns(2)
+        min_filter = p1.number_input("Prezzo da (€)", min_value=0.0, value=0.0, step=5.0)
+        max_filter = p2.number_input("Prezzo fino a (€), 0 = senza limite", min_value=0.0, value=0.0, step=5.0)
+        filtered["price"] = pd.to_numeric(filtered["price"], errors="coerce")
+        filtered = filtered[filtered["price"] >= min_filter]
+        if max_filter > 0:
+            filtered = filtered[filtered["price"] <= max_filter]
         if not filtered.empty:
             filtered["price"] = pd.to_numeric(filtered["price"], errors="coerce")
             x,y,z = st.columns(3)
@@ -98,9 +112,10 @@ with tab2:
             st.bar_chart(filtered.groupby("category_name")["price"].median())
             st.subheader("Famiglie di console e videogiochi")
             st.caption("Classificazione automatica indicativa basata sul titolo, senza consumare richieste SoldComps.")
-            filtered["famiglia"] = filtered["title"].fillna("").apply(classify)
             families = filtered.groupby("famiglia").agg(venduti=("id","count"), prezzo_medio=("price","mean"))
             st.dataframe(families.sort_values("venduti", ascending=False).head(50), use_container_width=True)
+            st.subheader("Distribuzione dei prezzi")
+            st.bar_chart(filtered.groupby(pd.cut(filtered["price"], bins=10, duplicates="drop"), observed=True).size().rename("Venduti"))
             st.subheader("Elenco venduti")
             st.dataframe(filtered[["title","famiglia","price","currency","sold_at","category_name","url"]],
                          use_container_width=True, hide_index=True)
