@@ -1,8 +1,10 @@
 import os
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 from datetime import datetime, timezone
 
+@contextmanager
 def connect():
     db_path = Path(os.getenv("DB_PATH", "data/venduti.sqlite3"))
     db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -37,7 +39,14 @@ def connect():
       http_code INTEGER
     );
     """)
-    return con
+    try:
+        yield con
+        con.commit()
+    except Exception:
+        con.rollback()
+        raise
+    finally:
+        con.close()
 
 def utcnow():
     return datetime.now(timezone.utc).isoformat()
