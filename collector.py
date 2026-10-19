@@ -24,6 +24,8 @@ def normalize_items(payload):
 def number(value):
     if isinstance(value, dict):
         value = value.get("value", value.get("amount"))
+    if isinstance(value, bool):
+        return None
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, str):
