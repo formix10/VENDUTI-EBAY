@@ -3,10 +3,11 @@ import re
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
-from storage import connect, monthly_calls
-from collector import collect
 
 load_dotenv()
+
+from storage import connect, monthly_calls
+from collector import collect
 st.set_page_config(page_title="Eolian Retrò · Venduti eBay", layout="wide", page_icon="🎮")
 st.title("🎮 Eolian Retrò — Venduti eBay")
 st.caption("Database indipendente · categorie e prezzi minimi personalizzati · SoldComps piano gratuito")
