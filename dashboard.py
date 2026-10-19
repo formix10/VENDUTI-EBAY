@@ -8,6 +8,7 @@ load_dotenv()
 
 from storage import connect, monthly_calls
 from collector import collect
+from classifier import classify
 st.set_page_config(page_title="Eolian Retrò · Venduti eBay", layout="wide", page_icon="🎮")
 st.title("🎮 Eolian Retrò — Venduti eBay")
 st.caption("Database indipendente · categorie e prezzi minimi personalizzati · SoldComps piano gratuito")
@@ -95,13 +96,13 @@ with tab2:
             z.metric("Prezzo mediano", f"€{filtered['price'].median():.2f}")
             st.subheader("Prezzi per categoria")
             st.bar_chart(filtered.groupby("category_name")["price"].median())
-            st.subheader("Famiglie di titoli (prime 3 parole)")
-            filtered["famiglia"] = filtered["title"].fillna("").apply(
-                lambda s: " ".join(re.findall(r"[\wÀ-ÿ]+", s.lower())[:3]) or "Altro")
+            st.subheader("Famiglie di console e videogiochi")
+            st.caption("Classificazione automatica indicativa basata sul titolo, senza consumare richieste SoldComps.")
+            filtered["famiglia"] = filtered["title"].fillna("").apply(classify)
             families = filtered.groupby("famiglia").agg(venduti=("id","count"), prezzo_medio=("price","mean"))
             st.dataframe(families.sort_values("venduti", ascending=False).head(50), use_container_width=True)
             st.subheader("Elenco venduti")
-            st.dataframe(filtered[["title","price","currency","sold_at","category_name","url"]],
+            st.dataframe(filtered[["title","famiglia","price","currency","sold_at","category_name","url"]],
                          use_container_width=True, hide_index=True)
             st.download_button("Esporta CSV", filtered.to_csv(index=False).encode("utf-8-sig"),
                                file_name="venduti_ebay.csv", mime="text/csv")
