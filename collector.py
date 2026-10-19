@@ -24,6 +24,8 @@ def normalize_items(payload):
 def number(value):
     if isinstance(value, dict):
         value = value.get("value", value.get("amount"))
+    if isinstance(value, bool):
+        return None
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, str):
@@ -71,6 +73,10 @@ def collect(category_id):
             raise RuntimeError(f"SoldComps ha risposto HTTP {response.status_code}. Verifica accesso API, piano e parametri.")
         payload = response.json()
         items = normalize_items(payload)
+        if not isinstance(payload, (dict, list)):
+            raise RuntimeError("Risposta SoldComps in formato non riconosciuto.")
+        if isinstance(payload, dict) and not any(isinstance(payload.get(k), (list, dict)) for k in ("items", "results", "listings", "data")):
+            raise RuntimeError("SoldComps ha restituito un formato inatteso: nessun elenco di venduti riconoscibile.")
         if isinstance(payload, dict) and not items and any(k in payload for k in ("error", "message")):
             raise RuntimeError("SoldComps non ha restituito risultati validi: controlla il messaggio nella dashboard del servizio.")
         added = 0
