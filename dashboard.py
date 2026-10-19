@@ -73,7 +73,8 @@ with tab1:
                                 st.rerun()
                             except Exception as exc:
                                 st.error(str(exc))
-                    if st.button("Elimina categoria", key=f"delete_{row.id}"):
+                    confirm_delete = st.checkbox("Confermo di voler eliminare questa categoria", key=f"confirm_delete_{row.id}")
+                    if st.button("Elimina categoria", key=f"delete_{row.id}", disabled=not confirm_delete):
                         with connect() as con:
                             con.execute("DELETE FROM categories WHERE id=?", (str(row.id),))
                             con.commit()
